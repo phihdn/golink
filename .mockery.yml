@@ -1,0 +1,10 @@
+template: testify
+dir: "{{.InterfaceDir}}/mocks"
+pkgname: mocks
+filename: "{{.InterfaceName}}.go"
+structname: "{{.InterfaceName}}"
+packages:
+  github.com/phihdn/golink/internal/service:
+    interfaces:
+      Health:
+      GenPass:
