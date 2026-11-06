@@ -29,6 +29,10 @@ func New(cfg config.Config) Engine {
 func (a *api) registerRoutes() {
 	healthHandler := handler.NewHealth(service.NewHealth(a.cfg.ServiceName, a.cfg.InstanceID))
 	a.GET("/health-check", healthHandler.Check)
+
+	genPassHandler := handler.NewGenPass(service.NewGenPass())
+	v1 := a.Group("/v1")
+	v1.GET("/gen-pass", genPassHandler.GeneratePassword)
 }
 
 func (a *api) Start(address string) error {
