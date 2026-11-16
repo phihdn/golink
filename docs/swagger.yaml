@@ -1,0 +1,54 @@
+basePath: /
+definitions:
+  model.ErrorResponse:
+    properties:
+      message:
+        example: Internal Server Error
+        type: string
+    type: object
+  model.Health:
+    properties:
+      instance_id:
+        type: string
+      message:
+        type: string
+      service_name:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: URL shortener service.
+  title: golink API
+  version: "1.0"
+paths:
+  /health-check:
+    get:
+      description: Returns the service name and instance id.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Health'
+      summary: Health check
+      tags:
+      - health
+  /v1/gen-pass:
+    get:
+      description: Returns a random 10-character alphanumeric password as plain text.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: aB3dE6gH9j
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Generate a password
+      tags:
+      - password
+swagger: "2.0"

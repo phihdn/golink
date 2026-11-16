@@ -7,6 +7,11 @@ import (
 	"github.com/phihdn/golink/internal/config"
 )
 
+//	@title			golink API
+//	@version		1.0
+//	@description	URL shortener service.
+//	@BasePath		/
+
 func main() {
 	cfg, err := config.Load()
 	if err != nil {

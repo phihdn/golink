@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	echoSwagger "github.com/swaggo/echo-swagger/v2"
 
+	_ "github.com/phihdn/golink/docs" // registers the generated Swagger spec
 	"github.com/phihdn/golink/internal/config"
 	"github.com/phihdn/golink/internal/handler"
 	"github.com/phihdn/golink/internal/service"
@@ -29,6 +31,7 @@ func New(cfg config.Config) Engine {
 func (a *api) registerRoutes() {
 	healthHandler := handler.NewHealth(service.NewHealth(a.cfg.ServiceName, a.cfg.InstanceID))
 	a.GET("/health-check", healthHandler.Check)
+	a.GET("/swagger/*", echoSwagger.EchoWrapHandler())
 
 	genPassHandler := handler.NewGenPass(service.NewGenPass())
 	v1 := a.Group("/v1")
