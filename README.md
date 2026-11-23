@@ -1,6 +1,6 @@
 # golink
 
-URL shortener service, exercise project for EBVN06. Built with Go, Echo v5 and a clean architecture layout.
+URL shortener service, exercise project for EBVN06. Built with Go, Echo v5, Redis and a clean architecture layout.
 
 ## Project layout
 
@@ -11,6 +11,7 @@ URL shortener service, exercise project for EBVN06. Built with Go, Echo v5 and a
 | `internal/api` | Echo setup and route registration. |
 | `internal/handler` | HTTP handlers. |
 | `internal/service` | Business logic. |
+| `internal/repository` | Redis access. |
 | `internal/model` | Request and response types. |
 | `internal/test/integration_test` | End to end tests through the full router. |
 | `docs` | Generated Swagger spec. |
@@ -22,13 +23,19 @@ URL shortener service, exercise project for EBVN06. Built with Go, Echo v5 and a
 | `PORT` | `8080` | HTTP port. |
 | `SERVICE_NAME` | `golink` | Name returned by the health check. |
 | `INSTANCE_ID` | random UUID | Instance id returned by the health check. |
+| `REDIS_ADDR` | `localhost:6379` | Redis address. |
+| `REDIS_PASSWORD` | empty | Redis password. |
+| `REDIS_DB` | `0` | Redis database number. |
 
 ## Getting started
 
 ```bash
-make tools   # install mockery and swag
-make run     # start the API on :8080
+make tools      # install mockery and swag
+make redis-up   # start Redis in Docker
+make run        # start the API on :8080
 ```
+
+Run the API and Redis together in Docker with `make docker-up`, and stop them with `make docker-down`.
 
 ## Make targets
 
@@ -41,6 +48,8 @@ make run     # start the API on :8080
 | `test-unit` | Run unit tests only. |
 | `test-integration` | Run integration tests only. |
 | `run` | Start the API locally. |
+| `redis-up` / `redis-down` | Start or stop Redis in Docker. |
+| `docker-up` / `docker-down` | Start or stop the API and Redis in Docker. |
 
 ## API
 

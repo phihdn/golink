@@ -4,7 +4,7 @@ SWAG               ?= $(GOBIN)/swag
 COVERAGE_EXCLUDE   ?= mocks|main.go|test|docs/docs.go
 COVERAGE_THRESHOLD ?= 80
 
-.PHONY: tools mock swag test test-unit test-integration run
+.PHONY: tools mock swag test test-unit test-integration run redis-up redis-down docker-up docker-down
 
 tools:
 	go install github.com/vektra/mockery/v3@v3.9.0
@@ -37,3 +37,15 @@ test-integration:
 
 run:
 	go run ./cmd/api
+
+redis-up:
+	docker compose up -d redis
+
+redis-down:
+	docker compose stop redis
+
+docker-up:
+	docker compose up -d --build
+
+docker-down:
+	docker compose down

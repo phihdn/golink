@@ -8,3 +8,6 @@ packages:
     interfaces:
       Health:
       GenPass:
+  github.com/phihdn/golink/internal/repository:
+    interfaces:
+      URLStorage:
