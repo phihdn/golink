@@ -6,8 +6,8 @@ Source: instructor review on [PR #2 Lesson 2](https://github.com/phihdn/golink/p
 | --- | --- | --- |
 | L1. Keep scratch programs out of the repo | `cmd/test/main.go` | [`01a1466`](https://github.com/phihdn/golink/commit/01a1466) |
 | L2. Pass one context through every layer | `handler/health.go:29`, `handler/shortenurl.go:62` | [`7ffc6a2`](https://github.com/phihdn/golink/commit/7ffc6a2) |
-| L3. Tests must prove that exact context arrives | `handler/health_test.go:47`, `handler/shortenurl_test.go:37` | make tests expect the exact request context (see L3) |
-| L4. Create the context in the test and expect that same value | `service/health_test.go:45` | pending |
+| L3. Tests must prove that exact context arrives | `handler/health_test.go:47`, `handler/shortenurl_test.go:37` | [`2448647`](https://github.com/phihdn/golink/commit/2448647) |
+| L4. Create the context in the test and expect that same value | `service/health_test.go:45` | pass the health check context through unchanged (see L4) |
 
 ## L1. Keep scratch programs out of the repo
 
@@ -114,7 +114,7 @@ storage.EXPECT().StoreURL(ctx, "abc1234", url, time.Hour).Return(nil).Once()
 code, err := NewShortenUrl(storage, gen).CreateShortenLink(ctx, url, time.Hour)
 ```
 
-Applied in the "make tests expect the exact request context" commit:
+Applied in `2448647`:
 
 - `context_test.go` in the `handler` and `service` packages adds `newRequestContext()`, which builds the `context.WithValue` context above. Each test case calls it, so every case owns its context.
 - `handler/health_test.go` and `handler/shortenurl_test.go` put that context on the request with `req.WithContext(ctx)` and expect it in the service mock.
@@ -158,6 +158,14 @@ got, err := NewHealth("golink", "abc-123", repo).Check(ctx)
 ```
 
 Trade-off to remember: without the wrap, an unreachable Redis host makes the health check wait for go-redis's own timeouts (about 5 seconds to dial). If a short limit is needed, set it once at the edge, for example in `redis.Options` (`DialTimeout`, `ReadTimeout`) or with an HTTP timeout middleware, not hidden inside a service.
+
+Applied in the "pass the health check context through unchanged" commit:
+
+- `service/health.go` drops `pingTimeout` and the `context.WithTimeout` wrap. `Check` passes `ctx` straight to `Ping`.
+- `service/health_test.go` creates the context with `newRequestContext()`, expects `Ping(ctx)`, and calls `Check(ctx)`. The `mock.MatchedBy` deadline check is gone.
+- The README no longer promises a 1 second timeout for `GET /health-check`.
+
+Since this commit, no test in the project uses `mock.Anything` or `mock.MatchedBy` for a context.
 
 ## Checklist for the next PR
 

@@ -1,12 +1,10 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/phihdn/golink/internal/model"
 	repomocks "github.com/phihdn/golink/internal/repository/mocks"
@@ -36,13 +34,11 @@ func TestHealth_Check(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx := newRequestContext()
 			repo := repomocks.NewHealthCheck(t)
-			repo.EXPECT().Ping(mock.MatchedBy(func(ctx context.Context) bool {
-				_, hasDeadline := ctx.Deadline()
-				return hasDeadline
-			})).Return(tc.pingErr).Once()
+			repo.EXPECT().Ping(ctx).Return(tc.pingErr).Once()
 
-			got, err := NewHealth("golink", "abc-123", repo).Check(context.Background())
+			got, err := NewHealth("golink", "abc-123", repo).Check(ctx)
 
 			assert.Equal(t, tc.expectedErr, err)
 			assert.Equal(t, tc.expectedHealth, got)

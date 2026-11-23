@@ -60,7 +60,7 @@ Swagger UI is served at `http://localhost:8080/swagger/index.html`.
 
 ### GET /health-check
 
-Pings Redis with a 1 second timeout. Returns `200` with the service name and instance id, or `500 {"error": "Internal Server Error"}` when Redis does not answer.
+Pings Redis with the request context. Returns `200` with the service name and instance id, or `500 {"error": "Internal Server Error"}` when Redis does not answer.
 
 ```json
 {"message": "OK", "service_name": "golink", "instance_id": "1f0c..."}
