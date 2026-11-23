@@ -5,8 +5,8 @@ Source: instructor review on [PR #2 Lesson 2](https://github.com/phihdn/golink/p
 | Lesson | Comments it comes from | Applied in |
 | --- | --- | --- |
 | L1. Keep scratch programs out of the repo | `cmd/test/main.go` | [`01a1466`](https://github.com/phihdn/golink/commit/01a1466) |
-| L2. Pass one context through every layer | `handler/health.go:29`, `handler/shortenurl.go:62` | explain why handlers pass the request context (see L2) |
-| L3. Tests must prove that exact context arrives | `handler/health_test.go:47`, `handler/shortenurl_test.go:37` | pending |
+| L2. Pass one context through every layer | `handler/health.go:29`, `handler/shortenurl.go:62` | [`7ffc6a2`](https://github.com/phihdn/golink/commit/7ffc6a2) |
+| L3. Tests must prove that exact context arrives | `handler/health_test.go:47`, `handler/shortenurl_test.go:37` | make tests expect the exact request context (see L3) |
 | L4. Create the context in the test and expect that same value | `service/health_test.go:45` | pending |
 
 ## L1. Keep scratch programs out of the repo
@@ -70,7 +70,7 @@ func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 
 Do not change the service to take `*echo.Context` or `*gin.Context`. The service would then depend on the web framework, which breaks clean architecture: services must only know `context.Context`.
 
-Applied in the "explain why handlers pass the request context" commit. The code already followed the rule: both handlers pass `c.Request().Context()`, and the services and repositories pass `ctx` on to Redis. The commit adds a comment at both call sites so a reader coming from Gin knows why the code does not pass `c`. The one layer that broke the chain is the health service's `context.WithTimeout`, fixed in L4. Proving that the context really arrives is L3's job.
+Applied in `7ffc6a2`. The code already followed the rule: both handlers pass `c.Request().Context()`, and the services and repositories pass `ctx` on to Redis. The commit adds a comment at both call sites so a reader coming from Gin knows why the code does not pass `c`. The one layer that broke the chain is the health service's `context.WithTimeout`, fixed in L4. Proving that the context really arrives is L3's job.
 
 ## L3. Tests must prove that exact context arrives
 
@@ -113,6 +113,15 @@ storage.EXPECT().StoreURL(ctx, "abc1234", url, time.Hour).Return(nil).Once()
 
 code, err := NewShortenUrl(storage, gen).CreateShortenLink(ctx, url, time.Hour)
 ```
+
+Applied in the "make tests expect the exact request context" commit:
+
+- `context_test.go` in the `handler` and `service` packages adds `newRequestContext()`, which builds the `context.WithValue` context above. Each test case calls it, so every case owns its context.
+- `handler/health_test.go` and `handler/shortenurl_test.go` put that context on the request with `req.WithContext(ctx)` and expect it in the service mock.
+- `service/shortenurl_test.go` passes it to `CreateShortenLink` and expects it in every `StoreURL` call, including the retries.
+- No `mock.Anything` is left for a context in these tests. The health service test still uses `mock.MatchedBy`, which is L4.
+
+Proof that the tests now guard the rule: changing the health handler to pass `context.Background()` makes `TestHealth_Check` fail with "mock: Unexpected Method Call".
 
 ## L4. Create the context in the test and expect that same value
 

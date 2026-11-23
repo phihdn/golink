@@ -8,7 +8,6 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/phihdn/golink/internal/model"
@@ -43,10 +42,11 @@ func TestHealth_Check(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx := newRequestContext()
 			svc := mocks.NewHealth(t)
-			svc.EXPECT().Check(mock.Anything).Return(tc.health, tc.err)
+			svc.EXPECT().Check(ctx).Return(tc.health, tc.err)
 
-			req := httptest.NewRequest(http.MethodGet, "/health-check", nil)
+			req := httptest.NewRequest(http.MethodGet, "/health-check", nil).WithContext(ctx)
 			rec := httptest.NewRecorder()
 			c := echo.New().NewContext(req, rec)
 
