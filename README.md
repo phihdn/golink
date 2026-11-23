@@ -7,7 +7,6 @@ URL shortener service, exercise project for EBVN06. Built with Go, Echo v5, Redi
 | Path | Purpose |
 | --- | --- |
 | `cmd/api` | Entry point. Loads config, connects Redis, starts the server. |
-| `cmd/test` | Small manual program that writes sample keys to Redis. |
 | `pkg/redis` | Redis client built from env (viper), plus `InitMockRedis` for tests. |
 | `internal/config` | Environment based config (viper). |
 | `internal/api` | Echo setup and route registration. |
