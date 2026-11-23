@@ -26,6 +26,8 @@ func NewHealth(svc service.Health) *Health {
 //	@Failure		500	{object}	map[string]string
 //	@Router			/health-check [get]
 func (h *Health) Check(c *echo.Context) error {
+	// *echo.Context is not a context.Context (unlike *gin.Context), so pass the
+	// request context. It is the one context every layer below must receive.
 	res, err := h.svc.Check(c.Request().Context())
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})

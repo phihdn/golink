@@ -59,6 +59,8 @@ func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 	}
 
 	// goi svc
+	// *echo.Context is not a context.Context (unlike *gin.Context), so pass the
+	// request context. It is the one context every layer below must receive.
 	code, err := h.svc.CreateShortenLink(c.Request().Context(), input.URL, time.Duration(input.Exp)*time.Second)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
