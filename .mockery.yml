@@ -12,3 +12,4 @@ packages:
   github.com/phihdn/golink/internal/repository:
     interfaces:
       URLStorage:
+      HealthCheck:

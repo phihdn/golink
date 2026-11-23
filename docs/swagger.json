@@ -10,7 +10,7 @@
     "paths": {
         "/health-check": {
             "get": {
-                "description": "Returns the service name and instance id.",
+                "description": "Returns the service name and instance id. Returns 500 when Redis does not answer a ping.",
                 "produces": [
                     "application/json"
                 ],
@@ -23,6 +23,15 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.Health"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -53,9 +62,88 @@
                     }
                 }
             }
+        },
+        "/v1/links/shorten": {
+            "post": {
+                "description": "Generate a unique 7-character code for the url. exp is the lifetime in seconds, 0 or omitted means no expiration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "link"
+                ],
+                "summary": "Generate shorten url based on original url",
+                "parameters": [
+                    {
+                        "description": "Input required",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.shortenLinkInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.shortenLinkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "handler.shortenLinkInput": {
+            "type": "object",
+            "properties": {
+                "exp": {
+                    "description": "Exp is the link lifetime in seconds. 0 or omitted means the link never expires.",
+                    "type": "integer",
+                    "example": 604800
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/some/long/path"
+                }
+            }
+        },
+        "handler.shortenLinkResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "aB3dE6g"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Shorten URL generated successfully!"
+                }
+            }
+        },
         "model.ErrorResponse": {
             "type": "object",
             "properties": {

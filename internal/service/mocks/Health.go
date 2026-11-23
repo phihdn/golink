@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/phihdn/golink/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -46,20 +48,29 @@ func (_m *Health) EXPECT() *Health_Expecter {
 }
 
 // Check provides a mock function for the type Health
-func (_mock *Health) Check() model.Health {
-	ret := _mock.Called()
+func (_mock *Health) Check(ctx context.Context) (model.Health, error) {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Check")
 	}
 
 	var r0 model.Health
-	if returnFunc, ok := ret.Get(0).(func() model.Health); ok {
-		r0 = returnFunc()
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (model.Health, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) model.Health); ok {
+		r0 = returnFunc(ctx)
 	} else {
 		r0 = ret.Get(0).(model.Health)
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // Health_Check_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Check'
@@ -68,23 +79,30 @@ type Health_Check_Call struct {
 }
 
 // Check is a helper method to define mock.On call
-func (_e *Health_Expecter) Check() *Health_Check_Call {
-	return &Health_Check_Call{Call: _e.mock.On("Check")}
+//   - ctx context.Context
+func (_e *Health_Expecter) Check(ctx any) *Health_Check_Call {
+	return &Health_Check_Call{Call: _e.mock.On("Check", ctx)}
 }
 
-func (_c *Health_Check_Call) Run(run func()) *Health_Check_Call {
+func (_c *Health_Check_Call) Run(run func(ctx context.Context)) *Health_Check_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
 
-func (_c *Health_Check_Call) Return(health model.Health) *Health_Check_Call {
-	_c.Call.Return(health)
+func (_c *Health_Check_Call) Return(health model.Health, err error) *Health_Check_Call {
+	_c.Call.Return(health, err)
 	return _c
 }
 
-func (_c *Health_Check_Call) RunAndReturn(run func() model.Health) *Health_Check_Call {
+func (_c *Health_Check_Call) RunAndReturn(run func(ctx context.Context) (model.Health, error)) *Health_Check_Call {
 	_c.Call.Return(run)
 	return _c
 }
