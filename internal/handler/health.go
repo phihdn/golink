@@ -16,6 +16,22 @@ func NewHealth(svc service.Health) *Health {
 	return &Health{svc: svc}
 }
 
+// Check godoc
+//
+//	@Summary		Health check
+//	@Description	Returns the service name and instance id. Returns 500 when Redis does not answer a ping.
+//	@Tags			health
+//	@Produce		json
+//	@Success		200	{object}	model.Health
+//	@Failure		500	{object}	map[string]string
+//	@Router			/health-check [get]
 func (h *Health) Check(c *echo.Context) error {
-	return c.JSON(http.StatusOK, h.svc.Check())
+	// *echo.Context is not a context.Context (unlike *gin.Context), so pass the
+	// request context. It is the one context every layer below must receive.
+	res, err := h.svc.Check(c.Request().Context())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
+	}
+
+	return c.JSON(http.StatusOK, res)
 }

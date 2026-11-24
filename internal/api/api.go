@@ -4,40 +4,57 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/redis/go-redis/v9"
+	echoSwagger "github.com/swaggo/echo-swagger/v2"
 
+	_ "github.com/phihdn/golink/docs" // registers the generated Swagger spec
 	"github.com/phihdn/golink/internal/config"
 	"github.com/phihdn/golink/internal/handler"
+	"github.com/phihdn/golink/internal/repository"
 	"github.com/phihdn/golink/internal/service"
 )
 
+// Engine is the interface of engine struct
 type Engine interface {
-	http.Handler
-	Start(address string) error
+	Start() error
+	ServeHTTP(w http.ResponseWriter, req *http.Request)
 }
 
-type api struct {
-	*echo.Echo
-	cfg config.Config
+type engine struct {
+	app         *echo.Echo
+	cfg         *config.Config
+	redisClient *redis.Client
 }
 
-func New(cfg config.Config) Engine {
-	a := &api{Echo: echo.New(), cfg: cfg}
-	a.registerRoutes()
-	return a
+// NewEngine create API Engine
+func NewEngine(cfg *config.Config, redisClient *redis.Client) Engine {
+	e := &engine{app: echo.New(), cfg: cfg, redisClient: redisClient}
+	e.initRoutes()
+	return e
 }
 
-func (a *api) registerRoutes() {
-	healthHandler := handler.NewHealth(service.NewHealth(a.cfg.ServiceName, a.cfg.InstanceID))
-	a.GET("/health-check", healthHandler.Check)
+// Start starts the HTTP server on the configured port
+func (e *engine) Start() error { return e.app.Start(":" + e.cfg.Port) }
 
-	genPassHandler := handler.NewGenPass(service.NewGenPass())
-	v1 := a.Group("/v1")
-	v1.GET("/gen-pass", genPassHandler.GeneratePassword)
+func (e *engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	e.app.ServeHTTP(w, req)
 }
 
-func (a *api) Start(address string) error {
-	if address == "" {
-		address = ":" + a.cfg.Port
-	}
-	return a.Echo.Start(address)
+func (e *engine) initRoutes() {
+	// khoi tao handler
+	healthCheckRepo := repository.NewHealthCheck(e.redisClient)
+	healthSvc := service.NewHealth(e.cfg.ServiceName, e.cfg.InstanceID, healthCheckRepo)
+	healthHandler := handler.NewHealth(healthSvc)
+
+	genPassSvc := service.NewGenPass()
+	genPassHandler := handler.NewGenPass(genPassSvc)
+
+	urlStorageRepo := repository.NewURLStorage(e.redisClient)
+	shortenURLSvc := service.NewShortenUrl(urlStorageRepo, genPassSvc)
+	shortenHandler := handler.NewShortenLink(shortenURLSvc)
+
+	e.app.GET("/health-check", healthHandler.Check)
+	e.app.GET("/swagger/*", echoSwagger.EchoWrapHandler())
+	e.app.GET("/v1/gen-pass", genPassHandler.GeneratePassword)
+	e.app.POST("/v1/links/shorten", shortenHandler.CreateShortenLink)
 }

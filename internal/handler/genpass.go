@@ -18,6 +18,15 @@ func NewGenPass(svc service.GenPass) *GenPass {
 	return &GenPass{svc: svc}
 }
 
+// GeneratePassword godoc
+//
+//	@Summary		Generate a password
+//	@Description	Returns a random 10-character alphanumeric password as plain text.
+//	@Tags			password
+//	@Produce		plain
+//	@Success		200	{string}	string	"aB3dE6gH9j"
+//	@Failure		500	{object}	model.ErrorResponse
+//	@Router			/v1/gen-pass [get]
 func (g *GenPass) GeneratePassword(c *echo.Context) error {
 	password, err := g.svc.GeneratePassword(passwordLength)
 	if err != nil {

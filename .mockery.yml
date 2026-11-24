@@ -8,3 +8,8 @@ packages:
     interfaces:
       Health:
       GenPass:
+      ShortenUrl:
+  github.com/phihdn/golink/internal/repository:
+    interfaces:
+      URLStorage:
+      HealthCheck:
