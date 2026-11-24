@@ -94,7 +94,7 @@ func TestShortenUrl_CreateShortenLink(t *testing.T) {
 
 			gen := mocks.NewGenPass(t)
 			storage := repomocks.NewURLStorage(t)
-			ctx := newRequestContext()
+			ctx := t.Context()
 			tc.setup(ctx, gen, storage)
 
 			code, err := NewShortenUrl(storage, gen).CreateShortenLink(ctx, url, tc.exp)

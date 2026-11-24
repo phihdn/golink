@@ -71,7 +71,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := newRequestContext()
+			ctx := t.Context()
 			svc := mocks.NewShortenUrl(t)
 			if tc.setup != nil {
 				tc.setup(ctx, svc)

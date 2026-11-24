@@ -1,13 +1,13 @@
 # Lessons learned from the PR #2 review
 
-Source: instructor review on [PR #2 Lesson 2](https://github.com/phihdn/golink/pull/2), commit `79e88ae`, 2026-11-23. Six comments, which boil down to four lessons.
+Source: instructor review on [PR #2 Lesson 2](https://github.com/phihdn/golink/pull/2), commit `79e88ae`, 2026-11-23. Six comments, which boil down to four lessons, plus a follow-up from the instructor at the end.
 
 | Lesson | Comments it comes from | Applied in |
 | --- | --- | --- |
 | L1. Keep scratch programs out of the repo | `cmd/test/main.go` | [`01a1466`](https://github.com/phihdn/golink/commit/01a1466) |
 | L2. Pass one context through every layer | `handler/health.go:29`, `handler/shortenurl.go:62` | [`7ffc6a2`](https://github.com/phihdn/golink/commit/7ffc6a2) |
 | L3. Tests must prove that exact context arrives | `handler/health_test.go:47`, `handler/shortenurl_test.go:37` | [`2448647`](https://github.com/phihdn/golink/commit/2448647) |
-| L4. Create the context in the test and expect that same value | `service/health_test.go:45` | pass the health check context through unchanged (see L4) |
+| L4. Create the context in the test and expect that same value | `service/health_test.go:45` | [`fb920e4`](https://github.com/phihdn/golink/commit/fb920e4) |
 
 ## L1. Keep scratch programs out of the repo
 
@@ -91,9 +91,7 @@ req := httptest.NewRequest(http.MethodGet, "/health-check", nil)
 Strong test, fails if any layer swaps the context:
 
 ```go
-type ctxKey struct{}
-
-ctx := context.WithValue(context.Background(), ctxKey{}, "request-1")
+ctx := t.Context()
 svc.EXPECT().Check(ctx).Return(health, nil)
 
 req := httptest.NewRequest(http.MethodGet, "/health-check", nil).WithContext(ctx)
@@ -103,18 +101,18 @@ c := echo.New().NewContext(req, rec)
 require.NoError(t, NewHealth(svc).Check(c))
 ```
 
-`context.WithValue` gives the context its own identity. Two calls to `context.Background()` return the same value, so a test built only on `Background()` would not catch a handler that replaced the request context with `context.Background()`.
+`t.Context()` (Go 1.24+) gives every test and subtest its own context, so it is never equal to `context.Background()`. A handler that replaced the request context with `context.Background()` makes the mock fail. Do not use `context.Background()` as the test context: every call returns the same value, so that mistake would still pass.
 
 The same applies one layer down. In service tests, expect the context you passed in, not `mock.Anything`:
 
 ```go
-ctx := context.WithValue(context.Background(), ctxKey{}, "request-1")
+ctx := t.Context()
 storage.EXPECT().StoreURL(ctx, "abc1234", url, time.Hour).Return(nil).Once()
 
 code, err := NewShortenUrl(storage, gen).CreateShortenLink(ctx, url, time.Hour)
 ```
 
-Applied in `2448647`:
+Applied in `2448647` (the first version used a custom helper, replaced later, see the follow-up section):
 
 - `context_test.go` in the `handler` and `service` packages adds `newRequestContext()`, which builds the `context.WithValue` context above. Each test case calls it, so every case owns its context.
 - `handler/health_test.go` and `handler/shortenurl_test.go` put that context on the request with `req.WithContext(ctx)` and expect it in the service mock.
@@ -151,7 +149,7 @@ func (h *health) Check(ctx context.Context) (model.Health, error) {
 ```
 
 ```go
-ctx := context.WithValue(context.Background(), ctxKey{}, "request-1")
+ctx := t.Context()
 repo.EXPECT().Ping(ctx).Return(nil).Once()
 
 got, err := NewHealth("golink", "abc-123", repo).Check(ctx)
@@ -159,7 +157,7 @@ got, err := NewHealth("golink", "abc-123", repo).Check(ctx)
 
 Trade-off to remember: without the wrap, an unreachable Redis host makes the health check wait for go-redis's own timeouts (about 5 seconds to dial). If a short limit is needed, set it once at the edge, for example in `redis.Options` (`DialTimeout`, `ReadTimeout`) or with an HTTP timeout middleware, not hidden inside a service.
 
-Applied in the "pass the health check context through unchanged" commit:
+Applied in `fb920e4`:
 
 - `service/health.go` drops `pingTimeout` and the `context.WithTimeout` wrap. `Check` passes `ctx` straight to `Ping`.
 - `service/health_test.go` creates the context with `newRequestContext()`, expects `Ping(ctx)`, and calls `Check(ctx)`. The `mock.MatchedBy` deadline check is gone.
@@ -167,10 +165,39 @@ Applied in the "pass the health check context through unchanged" commit:
 
 Since this commit, no test in the project uses `mock.Anything` or `mock.MatchedBy` for a context.
 
+## Follow-up: use `t.Context()` for the test context
+
+After seeing the fixes, the instructor approved the PR and added a tip. He had not noticed the project uses Echo, so he accepted `c.Request().Context()`. For tests he suggested `t.Context()` instead of building a context by hand:
+
+```go
+func TestEcho(t *testing.T) {
+    ctx := t.Context()
+
+    req := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
+    rec := httptest.NewRecorder()
+
+    c := echo.New().NewContext(req, rec)
+
+    assert.Equal(t, ctx, c.Request().Context()) // true
+}
+```
+
+The snippet shows that Echo hands back the exact context put on the request. So a test only needs to create `t.Context()`, attach it with `WithContext(ctx)`, and expect it in the mock. That keeps one context through every layer without `mock.Anything`.
+
+Why `t.Context()` beats the hand-made helper:
+
+- It is built into `testing`, so there is no `ctxKey` type or helper file to maintain.
+- Each test and subtest gets its own value, which is all the mock comparison needs.
+- It is cancelled when the test ends, so code that keeps working after the test finishes sees a cancelled context.
+
+One detail in his message: he wrote `mocks.NewHealth(t, ctx)`. The mockery constructor only takes `t`. The context goes into the expectation instead: `svc.EXPECT().Check(ctx)`.
+
+Applied in the "use t.Context for the test context" commit: the handler and service tests now use `ctx := t.Context()`, and both `context_test.go` helper files are deleted. The proof still holds: changing the health handler to pass `context.Background()` makes `TestHealth_Check` fail.
+
 ## Checklist for the next PR
 
 - [ ] No scratch programs or debug files in the diff.
 - [ ] Every service and repository method takes `ctx context.Context` as its first argument.
 - [ ] Handlers pass the request context (`c` in Gin, `c.Request().Context()` in Echo), never `context.Background()`.
 - [ ] Services and repositories pass `ctx` on unchanged.
-- [ ] Tests build their own `ctx` with `context.WithValue` and expect that exact value. No `mock.Anything` or `mock.MatchedBy` for contexts.
+- [ ] Tests use `ctx := t.Context()`, put it on the request with `WithContext(ctx)`, and expect that exact value. No `mock.Anything` or `mock.MatchedBy` for contexts.

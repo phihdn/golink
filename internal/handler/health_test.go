@@ -42,7 +42,7 @@ func TestHealth_Check(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := newRequestContext()
+			ctx := t.Context()
 			svc := mocks.NewHealth(t)
 			svc.EXPECT().Check(ctx).Return(tc.health, tc.err)
 

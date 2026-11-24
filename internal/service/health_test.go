@@ -34,7 +34,7 @@ func TestHealth_Check(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := newRequestContext()
+			ctx := t.Context()
 			repo := repomocks.NewHealthCheck(t)
 			repo.EXPECT().Ping(ctx).Return(tc.pingErr).Once()
 
