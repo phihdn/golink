@@ -10,6 +10,8 @@ definitions:
       url:
         example: https://example.com/some/long/path
         type: string
+    required:
+    - url
     type: object
   handler.shortenLinkResponse:
     properties:

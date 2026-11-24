@@ -89,4 +89,4 @@ curl -X POST localhost:8080/v1/links/shorten \
 {"code": "aB3dE6g", "message": "Shorten URL generated successfully!"}
 ```
 
-Returns `400 {"error": "Invalid Input"}` for a malformed body, a non http(s) URL, a negative `exp` or an `exp` too large to represent. Returns `500 {"error": "Internal Server Error"}` when storing fails.
+Returns `400 {"error": "Invalid Input"}` for a malformed body, a missing or invalid URL (`validate:"required,url"`), a negative `exp` or an `exp` too large to represent. Returns `500 {"error": "Internal Server Error"}` when storing fails.

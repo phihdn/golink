@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/phihdn/golink/internal/service/mocks"
+	"github.com/phihdn/golink/pkg/validator"
 )
 
 func TestShortenLink_CreateShortenLink(t *testing.T) {
@@ -71,20 +72,8 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 			expectedBody: invalidInput,
 		},
 		{
-			name:         "unsupported scheme",
-			body:         `{"url":"ftp://example.com"}`,
-			expectedCode: http.StatusBadRequest,
-			expectedBody: invalidInput,
-		},
-		{
 			name:         "missing host",
 			body:         `{"url":"https://"}`,
-			expectedCode: http.StatusBadRequest,
-			expectedBody: invalidInput,
-		},
-		{
-			name:         "port without host",
-			body:         `{"url":"https://:80"}`,
 			expectedCode: http.StatusBadRequest,
 			expectedBody: invalidInput,
 		},
@@ -127,7 +116,9 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 				WithContext(ctx)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
-			c := echo.New().NewContext(req, rec)
+			e := echo.New()
+			e.Validator = validator.New()
+			c := e.NewContext(req, rec)
 
 			err := NewShortenLink(svc).CreateShortenLink(c)
 

@@ -12,6 +12,7 @@ import (
 	"github.com/phihdn/golink/internal/handler"
 	"github.com/phihdn/golink/internal/repository"
 	"github.com/phihdn/golink/internal/service"
+	"github.com/phihdn/golink/pkg/validator"
 )
 
 // Engine is the interface of engine struct
@@ -29,6 +30,7 @@ type engine struct {
 // NewEngine create API Engine
 func NewEngine(cfg *config.Config, redisClient *redis.Client) Engine {
 	e := &engine{app: echo.New(), cfg: cfg, redisClient: redisClient}
+	e.app.Validator = validator.New()
 	e.initRoutes()
 	return e
 }

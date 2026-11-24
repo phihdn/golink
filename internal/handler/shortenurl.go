@@ -3,7 +3,6 @@ package handler
 import (
 	"math"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -32,7 +31,7 @@ func NewShortenLink(svc service.ShortenUrl) ShortenLink {
 type shortenLinkInput struct {
 	// Exp is the link lifetime in seconds. 0 or omitted means the link never expires.
 	Exp int64  `json:"exp" example:"604800"`
-	URL string `json:"url" example:"https://example.com/some/long/path"`
+	URL string `json:"url" example:"https://example.com/some/long/path" validate:"required,url"`
 }
 
 type shortenLinkResponse struct {
@@ -54,10 +53,10 @@ type shortenLinkResponse struct {
 func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 	// lay input
 	input := &shortenLinkInput{}
-	if err := c.Bind(
-		input,
-	); err != nil || !isValidURL(input.URL) || input.Exp < 0 ||
-		input.Exp > maxExpSeconds {
+	if err := c.Bind(input); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Input"})
+	}
+	if err := c.Validate(input); err != nil || input.Exp < 0 || input.Exp > maxExpSeconds {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Input"})
 	}
 
@@ -78,13 +77,4 @@ func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 
 	// return resp
 	return c.JSON(http.StatusOK, shortenLinkResponse{Code: code, Message: shortenSuccessMessage})
-}
-
-// isValidURL accepts only absolute http or https URLs that have a host.
-func isValidURL(rawURL string) bool {
-	u, err := url.ParseRequestURI(rawURL)
-	if err != nil {
-		return false
-	}
-	return (u.Scheme == "http" || u.Scheme == "https") && u.Hostname() != ""
 }

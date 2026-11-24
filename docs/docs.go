@@ -126,6 +126,9 @@ const docTemplate = `{
     "definitions": {
         "handler.shortenLinkInput": {
             "type": "object",
+            "required": [
+                "url"
+            ],
             "properties": {
                 "exp": {
                     "description": "Exp is the link lifetime in seconds. 0 or omitted means the link never expires.",
