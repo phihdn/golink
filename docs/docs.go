@@ -133,6 +133,8 @@ const docTemplate = `{
                 "exp": {
                     "description": "Exp is the link lifetime in seconds. 0 or omitted means the link never expires.",
                     "type": "integer",
+                    "maximum": 9223372036,
+                    "minimum": 0,
                     "example": 604800
                 },
                 "url": {

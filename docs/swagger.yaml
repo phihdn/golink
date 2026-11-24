@@ -6,6 +6,8 @@ definitions:
         description: Exp is the link lifetime in seconds. 0 or omitted means the link
           never expires.
         example: 604800
+        maximum: 9223372036
+        minimum: 0
         type: integer
       url:
         example: https://example.com/some/long/path

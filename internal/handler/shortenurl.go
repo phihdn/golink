@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"math"
 	"net/http"
 	"time"
 
@@ -10,11 +9,7 @@ import (
 	"github.com/phihdn/golink/internal/service"
 )
 
-const (
-	shortenSuccessMessage = "Shorten URL generated successfully!"
-	// maxExpSeconds is the largest exp that still fits in a time.Duration.
-	maxExpSeconds = math.MaxInt64 / int64(time.Second)
-)
+const shortenSuccessMessage = "Shorten URL generated successfully!"
 
 type ShortenLink interface {
 	CreateShortenLink(c *echo.Context) error
@@ -29,9 +24,12 @@ func NewShortenLink(svc service.ShortenUrl) ShortenLink {
 }
 
 type shortenLinkInput struct {
+	// lte=9223372036 is math.MaxInt64 / int64(time.Second), the largest exp
+	// that still fits in a time.Duration.
+
 	// Exp is the link lifetime in seconds. 0 or omitted means the link never expires.
-	Exp int64  `json:"exp" example:"604800"`
-	URL string `json:"url" example:"https://example.com/some/long/path" validate:"required,url"`
+	Exp int64  `json:"exp" validate:"gte=0,lte=9223372036" example:"604800"`
+	URL string `json:"url" validate:"required,url"         example:"https://example.com/some/long/path"`
 }
 
 type shortenLinkResponse struct {
@@ -56,7 +54,7 @@ func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 	if err := c.Bind(input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Input"})
 	}
-	if err := c.Validate(input); err != nil || input.Exp < 0 || input.Exp > maxExpSeconds {
+	if err := c.Validate(input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Input"})
 	}
 
