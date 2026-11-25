@@ -3,6 +3,8 @@ MOCKERY            ?= $(GOBIN)/mockery
 SWAG               ?= $(GOBIN)/swag
 COVERAGE_EXCLUDE   ?= mocks|main.go|test|docs/docs.go
 COVERAGE_THRESHOLD ?= 80
+IMAGE              ?= golink:local
+DOCKER_PORT        ?= 8080
 # Same formatters, order and versions as the editor (conform.nvim): gofumpt, golines, goimports-reviser.
 GOFUMPT            ?= go run mvdan.cc/gofumpt@v0.12.0
 GOLINES            ?= go run github.com/golangci/golines@v0.15.0
@@ -10,7 +12,7 @@ GOIMPORTS_REVISER  ?= go run github.com/incu6us/goimports-reviser/v3@v3.13.2
 # Hand-written Go files. Generated code (swag docs, mockery mocks) is left as its generator wrote it.
 GO_FILES            = $(shell find . -name '*.go' -not -path './docs/*' -not -path '*/mocks/*')
 
-.PHONY: tools hooks fmt mock swag test test-unit test-integration run redis-up redis-down docker-up docker-down
+.PHONY: tools hooks fmt mock swag test test-unit test-integration run redis-up redis-down docker-build docker-run docker-up docker-down
 
 tools:
 	go install github.com/vektra/mockery/v3@v3.9.0
@@ -58,6 +60,17 @@ redis-up:
 
 redis-down:
 	docker compose stop redis
+
+# Builds the multi-stage Dockerfile into IMAGE.
+docker-build:
+	docker build -t $(IMAGE) .
+
+# Runs IMAGE on DOCKER_PORT against the Redis from redis-up on the host.
+docker-run: docker-build redis-up
+	docker run --rm --name golink -p $(DOCKER_PORT):8080 \
+		--add-host=host.docker.internal:host-gateway \
+		-e REDIS_ADDR=host.docker.internal:6379 \
+		$(IMAGE)
 
 docker-up:
 	docker compose up -d --build

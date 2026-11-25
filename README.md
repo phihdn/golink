@@ -39,7 +39,9 @@ make redis-up   # start Redis in Docker
 make run        # start the API on :8080
 ```
 
-Run the API and Redis together in Docker with `make docker-up`, and stop them with `make docker-down`.
+Run the API and Redis together in Docker with `make docker-up`, and stop them with `make docker-down`. To run only the API image, use `make docker-run`: it builds the image and starts it against the Redis from `make redis-up` (`DOCKER_PORT=8081 make docker-run` picks another host port).
+
+The `Dockerfile` is multi-stage: a `golang` stage builds a static binary, and the final `alpine` image only contains that binary.
 
 ## Make targets
 
@@ -55,6 +57,8 @@ Run the API and Redis together in Docker with `make docker-up`, and stop them wi
 | `test-integration` | Run integration tests only. |
 | `run` | Start the API locally. |
 | `redis-up` / `redis-down` | Start or stop Redis in Docker. |
+| `docker-build` | Build the API image as `IMAGE` (default `golink:local`). |
+| `docker-run` | Build the image, start Redis, then run the API container on `DOCKER_PORT` (default 8080). |
 | `docker-up` / `docker-down` | Start or stop the API and Redis in Docker. |
 
 ## Logging
