@@ -59,4 +59,5 @@ func (e *engine) initRoutes() {
 	e.app.GET("/swagger/*", echoSwagger.EchoWrapHandler())
 	e.app.GET("/v1/gen-pass", genPassHandler.GeneratePassword)
 	e.app.POST("/v1/links/shorten", shortenHandler.CreateShortenLink)
+	e.app.GET("/v1/links/redirect/:code", shortenHandler.Redirect)
 }

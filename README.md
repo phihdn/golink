@@ -90,3 +90,13 @@ curl -X POST localhost:8080/v1/links/shorten \
 ```
 
 Returns `400 {"error": "Invalid Input"}` for a malformed body, a missing or invalid URL (`validate:"required,url"`), or an `exp` outside 0 to 604800 seconds, which is 7 days (`validate:"gte=0,lte=604800"`). Returns `500 {"error": "Internal Server Error"}` when storing fails.
+
+### GET /v1/links/redirect/{code}
+
+Looks up the code in Redis and answers `302 Found` with the original url in the `Location` header, so a browser goes straight to it. It is 302, not 301, because links expire: browsers cache a 301 and would keep redirecting after the link is gone, while a 302 sends every visit through the server.
+
+```bash
+curl -i localhost:8080/v1/links/redirect/aB3dE6g
+```
+
+Returns `404 {"error": "Not Found"}` when the code does not exist or has expired, and `500 {"error": "Internal Server Error"}` when Redis fails.

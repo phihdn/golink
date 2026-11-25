@@ -122,3 +122,40 @@ func TestShortenUrl_CreateShortenLink(t *testing.T) {
 		})
 	}
 }
+
+func TestShortenUrl_GetUrlFromCode(t *testing.T) {
+	t.Parallel()
+
+	const url = "https://example.com/some/long/path"
+
+	testCases := []struct {
+		name        string
+		storedURL   string
+		storeErr    error
+		expectedURL string
+		expectedErr error
+	}{
+		{name: "found", storedURL: url, expectedURL: url},
+		{name: "not found", storeErr: repository.ErrKeyNotFound, expectedErr: ErrLinkNotFound},
+		{
+			name:        "storage error",
+			storeErr:    errors.New("redis down"),
+			expectedErr: errors.New("redis down"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := t.Context()
+			storage := repomocks.NewURLStorage(t)
+			storage.EXPECT().GetURL(ctx, "abc1234").Return(tc.storedURL, tc.storeErr).Once()
+
+			got, err := NewShortenUrl(storage, mocks.NewGenPass(t)).GetUrlFromCode(ctx, "abc1234")
+
+			assert.Equal(t, tc.expectedErr, err)
+			assert.Equal(t, tc.expectedURL, got)
+		})
+	}
+}

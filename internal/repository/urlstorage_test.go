@@ -124,7 +124,7 @@ func TestUrlStorage_GetURL(t *testing.T) {
 			setupMock: func(ctx context.Context) *redis.Client {
 				return redisPkg.InitMockRedis(t)
 			},
-			expectedErr: redis.Nil,
+			expectedErr: ErrKeyNotFound,
 		},
 		{
 			name: "redis error",

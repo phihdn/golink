@@ -52,6 +52,12 @@ definitions:
         example: Internal Server Error
         type: string
     type: object
+  model.NotFoundError:
+    properties:
+      error:
+        example: Not Found
+        type: string
+    type: object
 info:
   contact: {}
   description: URL shortener service.
@@ -93,6 +99,37 @@ paths:
       summary: Generate a password
       tags:
       - password
+  /v1/links/redirect/{code}:
+    get:
+      description: Look up the code and answer 302 Found with the original url in
+        the Location header.
+      parameters:
+      - description: Short code
+        example: aB3dE6g
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.BadRequestError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.NotFoundError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.InternalServerError'
+      summary: Redirect a short code to its original url
+      tags:
+      - link
   /v1/links/shorten:
     post:
       consumes:

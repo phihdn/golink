@@ -67,6 +67,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/links/redirect/{code}": {
+            "get": {
+                "description": "Look up the code and answer 302 Found with the original url in the Location header.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "link"
+                ],
+                "summary": "Redirect a short code to its original url",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "aB3dE6g",
+                        "description": "Short code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.BadRequestError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.NotFoundError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.InternalServerError"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/links/shorten": {
             "post": {
                 "description": "Generate a unique 7-character code for the url. exp is the lifetime in seconds, 0 or omitted means no expiration.",
@@ -185,6 +230,15 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "Internal Server Error"
+                }
+            }
+        },
+        "model.NotFoundError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Not Found"
                 }
             }
         }
