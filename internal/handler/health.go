@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/rs/zerolog"
 
 	"github.com/phihdn/golink/internal/model"
 	"github.com/phihdn/golink/internal/service"
@@ -31,6 +32,7 @@ func (h *Health) Check(c *echo.Context) error {
 	// request context. It is the one context every layer below must receive.
 	res, err := h.svc.Check(c.Request().Context())
 	if err != nil {
+		zerolog.Ctx(c.Request().Context()).Error().Err(err).Msg("health check failed")
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.HTTPError{Error: "Internal Server Error"},

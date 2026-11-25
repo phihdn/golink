@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"github.com/rs/zerolog"
 
 	"github.com/phihdn/golink/internal/model"
 	"github.com/phihdn/golink/internal/service"
@@ -68,6 +69,10 @@ func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 		time.Duration(input.Exp)*time.Second,
 	)
 	if err != nil {
+		zerolog.Ctx(c.Request().Context()).Error().
+			Err(err).
+			Str("url", input.URL).
+			Msg("create shorten link failed")
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.HTTPError{Error: "Internal Server Error"},
@@ -102,6 +107,10 @@ func (h *shortenLink) Redirect(c *echo.Context) error {
 		return c.JSON(http.StatusNotFound, model.HTTPError{Error: "Not Found"})
 	}
 	if err != nil {
+		zerolog.Ctx(c.Request().Context()).Error().
+			Err(err).
+			Str("code", code).
+			Msg("get url from code failed")
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.HTTPError{Error: "Internal Server Error"},

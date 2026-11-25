@@ -32,6 +32,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		setup        func(ctx context.Context, svc *mocks.ShortenUrl)
 		expectedCode int
 		expectedBody string
+		expectedLog  string
 	}{
 		{
 			name: "success with max exp of 7 days",
@@ -101,6 +102,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 			},
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: `{"error":"Internal Server Error"}`,
+			expectedLog:  "create shorten link failed",
 		},
 	}
 
@@ -108,7 +110,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := t.Context()
+			ctx, logs := newLoggedContext(t)
 			svc := mocks.NewShortenUrl(t)
 			if tc.setup != nil {
 				tc.setup(ctx, svc)
@@ -127,6 +129,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedCode, rec.Code)
 			assert.JSONEq(t, tc.expectedBody, rec.Body.String())
+			assertErrorLog(t, logs, tc.expectedLog, "redis down")
 		})
 	}
 }
@@ -143,6 +146,7 @@ func TestShortenLink_Redirect(t *testing.T) {
 		expectedCode     int
 		expectedLocation string
 		expectedBody     string
+		expectedLog      string
 	}{
 		{
 			name: "found",
@@ -176,6 +180,7 @@ func TestShortenLink_Redirect(t *testing.T) {
 			},
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: `{"error":"Internal Server Error"}`,
+			expectedLog:  "get url from code failed",
 		},
 		{
 			name:         "empty code",
@@ -189,7 +194,7 @@ func TestShortenLink_Redirect(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := t.Context()
+			ctx, logs := newLoggedContext(t)
 			svc := mocks.NewShortenUrl(t)
 			if tc.setup != nil {
 				tc.setup(ctx, svc)
@@ -208,6 +213,7 @@ func TestShortenLink_Redirect(t *testing.T) {
 			if tc.expectedBody != "" {
 				assert.JSONEq(t, tc.expectedBody, rec.Body.String())
 			}
+			assertErrorLog(t, logs, tc.expectedLog, "redis down")
 		})
 	}
 }

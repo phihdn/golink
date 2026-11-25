@@ -57,6 +57,14 @@ Run the API and Redis together in Docker with `make docker-up`, and stop them wi
 | `redis-up` / `redis-down` | Start or stop Redis in Docker. |
 | `docker-up` / `docker-down` | Start or stop the API and Redis in Docker. |
 
+## Logging
+
+Every handler that answers 5xx first logs the real error with zerolog, as one JSON line on stderr. The message names the failed step, and the line adds the input that matters (`url` for shorten, `code` for redirect). The client only gets `{"error": "Internal Server Error"}`.
+
+```json
+{"level":"error","error":"dial tcp 127.0.0.1:6379: connect: connection refused","url":"https://example.com","time":"2026-11-25T04:27:13Z","message":"create shorten link failed"}
+```
+
 ## API
 
 Swagger UI is served at `http://localhost:8080/swagger/index.html`.
