@@ -24,12 +24,10 @@ func NewShortenLink(svc service.ShortenUrl) ShortenLink {
 }
 
 type shortenLinkInput struct {
-	// lte=9223372036 is math.MaxInt64 / int64(time.Second), the largest exp
-	// that still fits in a time.Duration.
-
-	// Exp is the link lifetime in seconds. 0 or omitted means the link never expires.
-	Exp int64  `json:"exp" validate:"gte=0,lte=9223372036" example:"604800"`
-	URL string `json:"url" validate:"required,url"         example:"https://example.com/some/long/path"`
+	// Exp is the link lifetime in seconds, at most 7 days (604800).
+	// 0 or omitted means the link never expires.
+	Exp int64  `json:"exp" validate:"gte=0,lte=604800" example:"604800"`
+	URL string `json:"url" validate:"required,url"     example:"https://example.com/some/long/path"`
 }
 
 type shortenLinkResponse struct {

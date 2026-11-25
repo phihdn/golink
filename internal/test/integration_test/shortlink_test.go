@@ -70,7 +70,7 @@ func TestShorten_InvalidInput(t *testing.T) {
 		{name: "missing url", body: `{"exp":10}`},
 		{name: "invalid url", body: `{"url":"not-a-url"}`},
 		{name: "negative exp", body: `{"exp":-5,"url":"https://example.com"}`},
-		{name: "exp too large", body: `{"exp":9223372037,"url":"https://example.com"}`},
+		{name: "exp too large", body: `{"exp":604801,"url":"https://example.com"}`},
 		{name: "fractional exp", body: `{"exp":1.5,"url":"https://example.com"}`},
 		{name: "string exp", body: `{"exp":"10","url":"https://example.com"}`},
 	}

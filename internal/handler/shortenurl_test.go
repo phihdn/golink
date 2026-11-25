@@ -32,7 +32,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		expectedBody string
 	}{
 		{
-			name: "success with exp",
+			name: "success with max exp of 7 days",
 			body: `{"exp":604800,"url":"https://example.com"}`,
 			setup: func(ctx context.Context, svc *mocks.ShortenUrl) {
 				svc.EXPECT().
@@ -48,17 +48,6 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 			setup: func(ctx context.Context, svc *mocks.ShortenUrl) {
 				svc.EXPECT().
 					CreateShortenLink(ctx, "https://example.com", time.Duration(0)).
-					Return("abc1234", nil)
-			},
-			expectedCode: http.StatusOK,
-			expectedBody: successBody,
-		},
-		{
-			name: "success with largest exp",
-			body: `{"exp":9223372036,"url":"https://example.com"}`,
-			setup: func(ctx context.Context, svc *mocks.ShortenUrl) {
-				svc.EXPECT().
-					CreateShortenLink(ctx, "https://example.com", 9223372036*time.Second).
 					Return("abc1234", nil)
 			},
 			expectedCode: http.StatusOK,
@@ -96,7 +85,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		},
 		{
 			name:         "exp too large",
-			body:         `{"exp":9223372037,"url":"https://example.com"}`,
+			body:         `{"exp":604801,"url":"https://example.com"}`,
 			expectedCode: http.StatusBadRequest,
 			expectedBody: invalidInput,
 		},

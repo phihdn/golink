@@ -89,4 +89,4 @@ curl -X POST localhost:8080/v1/links/shorten \
 {"code": "aB3dE6g", "message": "Shorten URL generated successfully!"}
 ```
 
-Returns `400 {"error": "Invalid Input"}` for a malformed body, a missing or invalid URL (`validate:"required,url"`), or an `exp` outside 0 to 9223372036 seconds (`validate:"gte=0,lte=9223372036"`). Returns `500 {"error": "Internal Server Error"}` when storing fails.
+Returns `400 {"error": "Invalid Input"}` for a malformed body, a missing or invalid URL (`validate:"required,url"`), or an `exp` outside 0 to 604800 seconds, which is 7 days (`validate:"gte=0,lte=604800"`). Returns `500 {"error": "Internal Server Error"}` when storing fails.

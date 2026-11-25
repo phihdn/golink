@@ -3,10 +3,11 @@ definitions:
   handler.shortenLinkInput:
     properties:
       exp:
-        description: Exp is the link lifetime in seconds. 0 or omitted means the link
-          never expires.
+        description: |-
+          Exp is the link lifetime in seconds, at most 7 days (604800).
+          0 or omitted means the link never expires.
         example: 604800
-        maximum: 9223372036
+        maximum: 604800
         minimum: 0
         type: integer
       url:
