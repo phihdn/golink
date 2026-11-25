@@ -39,7 +39,9 @@ make redis-up   # start Redis in Docker
 make run        # start the API on :8080
 ```
 
-Run the API and Redis together in Docker with `make docker-up`, and stop them with `make docker-down`.
+Run the API and Redis together in Docker with `make docker-up`, and stop them with `make docker-down`. To run only the API image, use `make docker-run`: it builds the image and starts it against the Redis from `make redis-up` (`DOCKER_PORT=8081 make docker-run` picks another host port).
+
+The `Dockerfile` is multi-stage: a `golang` stage builds a static binary, and the final `alpine` image only contains that binary.
 
 ## Make targets
 
@@ -55,7 +57,17 @@ Run the API and Redis together in Docker with `make docker-up`, and stop them wi
 | `test-integration` | Run integration tests only. |
 | `run` | Start the API locally. |
 | `redis-up` / `redis-down` | Start or stop Redis in Docker. |
+| `docker-build` | Build the API image as `IMAGE` (default `golink:local`). |
+| `docker-run` | Build the image, start Redis, then run the API container on `DOCKER_PORT` (default 8080). |
 | `docker-up` / `docker-down` | Start or stop the API and Redis in Docker. |
+
+## Logging
+
+Every handler that answers 5xx first logs the real error with zerolog, as one JSON line on stderr. The message names the failed step, and the line adds the input that matters (`url` for shorten, `code` for redirect). The client only gets `{"error": "Internal Server Error"}`.
+
+```json
+{"level":"error","error":"dial tcp 127.0.0.1:6379: connect: connection refused","url":"https://example.com","time":"2026-11-25T04:27:13Z","message":"create shorten link failed"}
+```
 
 ## API
 
@@ -89,4 +101,14 @@ curl -X POST localhost:8080/v1/links/shorten \
 {"code": "aB3dE6g", "message": "Shorten URL generated successfully!"}
 ```
 
-Returns `400 {"error": "Invalid Input"}` for a malformed body, a non http(s) URL, a negative `exp` or an `exp` too large to represent. Returns `500 {"error": "Internal Server Error"}` when storing fails.
+Returns `400 {"error": "Invalid Input"}` for a malformed body, a missing or invalid URL (`validate:"required,url"`), or an `exp` outside 0 to 604800 seconds, which is 7 days (`validate:"gte=0,lte=604800"`). Returns `500 {"error": "Internal Server Error"}` when storing fails.
+
+### GET /v1/links/redirect/{code}
+
+Looks up the code in Redis and answers `302 Found` with the original url in the `Location` header, so a browser goes straight to it. It is 302, not 301, because links expire: browsers cache a 301 and would keep redirecting after the link is gone, while a 302 sends every visit through the server.
+
+```bash
+curl -i localhost:8080/v1/links/redirect/aB3dE6g
+```
+
+Returns `404 {"error": "Not Found"}` when the code does not exist or has expired, and `500 {"error": "Internal Server Error"}` when Redis fails.

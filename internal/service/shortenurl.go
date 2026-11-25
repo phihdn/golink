@@ -14,12 +14,18 @@ const (
 	MaxGenerateRetries = 5
 )
 
-// ErrCodeExhausted is returned when every generated code was already taken.
-var ErrCodeExhausted = errors.New("could not generate a unique code")
+var (
+	// ErrCodeExhausted is returned when every generated code was already taken.
+	ErrCodeExhausted = errors.New("could not generate a unique code")
+	// ErrLinkNotFound is returned by GetUrlFromCode when no link exists for the code.
+	ErrLinkNotFound = errors.New("link not found")
+)
 
 type ShortenUrl interface {
 	// CreateShortenLink stores url under a new unique code that expires after exp (0 = never) and returns the code.
 	CreateShortenLink(ctx context.Context, url string, exp time.Duration) (string, error)
+	// GetUrlFromCode returns the original url for code, or ErrLinkNotFound when the code is unknown or expired.
+	GetUrlFromCode(ctx context.Context, code string) (string, error)
 }
 
 type shortenUrl struct {
@@ -57,4 +63,16 @@ func (s *shortenUrl) CreateShortenLink(
 	}
 
 	return "", ErrCodeExhausted
+}
+
+func (s *shortenUrl) GetUrlFromCode(ctx context.Context, code string) (string, error) {
+	url, err := s.r.GetURL(ctx, code)
+	if errors.Is(err, repository.ErrKeyNotFound) {
+		return "", ErrLinkNotFound
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

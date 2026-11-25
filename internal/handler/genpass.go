@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/rs/zerolog"
 
 	"github.com/phihdn/golink/internal/service"
 )
@@ -30,6 +31,7 @@ func NewGenPass(svc service.GenPass) *GenPass {
 func (g *GenPass) GeneratePassword(c *echo.Context) error {
 	password, err := g.svc.GeneratePassword(passwordLength)
 	if err != nil {
+		zerolog.Ctx(c.Request().Context()).Error().Err(err).Msg("generate password failed")
 		return err
 	}
 

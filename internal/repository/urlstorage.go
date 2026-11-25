@@ -8,13 +8,18 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// ErrKeyExisted is returned by StoreURL when the key is already taken.
-var ErrKeyExisted = errors.New("key already exists")
+var (
+	// ErrKeyExisted is returned by StoreURL when the key is already taken.
+	ErrKeyExisted = errors.New("key already exists")
+	// ErrKeyNotFound is returned by GetURL when the key does not exist or has expired.
+	ErrKeyNotFound = errors.New("key not found")
+)
 
 type URLStorage interface {
 	// StoreURL saves key -> url only when the key is not taken yet, otherwise it returns ErrKeyExisted.
 	// A zero exp means the url never expires.
 	StoreURL(ctx context.Context, key, url string, exp time.Duration) error
+	// GetURL returns the url saved under key, or ErrKeyNotFound when there is none.
 	GetURL(ctx context.Context, key string) (string, error)
 }
 
@@ -41,6 +46,9 @@ func (s *urlStorage) StoreURL(ctx context.Context, key, url string, exp time.Dur
 
 func (s *urlStorage) GetURL(ctx context.Context, key string) (string, error) {
 	url, err := s.c.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return "", ErrKeyNotFound
+	}
 	if err != nil {
 		return "", err
 	}

@@ -23,6 +23,7 @@ func TestHealth_Check(t *testing.T) {
 		err          error
 		expectedCode int
 		expectedBody string
+		expectedLog  string
 	}{
 		{
 			name:         "healthy",
@@ -35,6 +36,7 @@ func TestHealth_Check(t *testing.T) {
 			err:          errors.New("connection refused"),
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: `{"error":"Internal Server Error"}`,
+			expectedLog:  "health check failed",
 		},
 	}
 
@@ -42,7 +44,7 @@ func TestHealth_Check(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := t.Context()
+			ctx, logs := newLoggedContext(t)
 			svc := mocks.NewHealth(t)
 			svc.EXPECT().Check(ctx).Return(tc.health, tc.err)
 
@@ -54,6 +56,7 @@ func TestHealth_Check(t *testing.T) {
 
 			assert.Equal(t, tc.expectedCode, rec.Code)
 			assert.JSONEq(t, tc.expectedBody, rec.Body.String())
+			assertErrorLog(t, logs, tc.expectedLog, "connection refused")
 		})
 	}
 }

@@ -35,10 +35,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.InternalServerError"
                         }
                     }
                 }
@@ -65,6 +62,51 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/links/redirect/{code}": {
+            "get": {
+                "description": "Look up the code and answer 302 Found with the original url in the Location header.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "link"
+                ],
+                "summary": "Redirect a short code to its original url",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "aB3dE6g",
+                        "description": "Short code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.BadRequestError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.NotFoundError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.InternalServerError"
                         }
                     }
                 }
@@ -104,19 +146,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.BadRequestError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.InternalServerError"
                         }
                     }
                 }
@@ -126,10 +162,15 @@ const docTemplate = `{
     "definitions": {
         "handler.shortenLinkInput": {
             "type": "object",
+            "required": [
+                "url"
+            ],
             "properties": {
                 "exp": {
-                    "description": "Exp is the link lifetime in seconds. 0 or omitted means the link never expires.",
+                    "description": "Exp is the link lifetime in seconds, at most 7 days (604800).\n0 or omitted means the link never expires.",
                     "type": "integer",
+                    "maximum": 604800,
+                    "minimum": 0,
                     "example": 604800
                 },
                 "url": {
@@ -148,6 +189,15 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Shorten URL generated successfully!"
+                }
+            }
+        },
+        "model.BadRequestError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Invalid Input"
                 }
             }
         },
@@ -171,6 +221,24 @@ const docTemplate = `{
                 },
                 "service_name": {
                     "type": "string"
+                }
+            }
+        },
+        "model.InternalServerError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Internal Server Error"
+                }
+            }
+        },
+        "model.NotFoundError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Not Found"
                 }
             }
         }

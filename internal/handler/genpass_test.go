@@ -22,6 +22,7 @@ func TestGenPass_GeneratePassword(t *testing.T) {
 		expectedCode int
 		expectedBody string
 		expectedErr  error
+		expectedLog  string
 	}{
 		{
 			name:         "success",
@@ -33,6 +34,7 @@ func TestGenPass_GeneratePassword(t *testing.T) {
 			name:        "service error",
 			serviceErr:  errors.New("rand failure"),
 			expectedErr: errors.New("rand failure"),
+			expectedLog: "generate password failed",
 		},
 	}
 
@@ -43,7 +45,8 @@ func TestGenPass_GeneratePassword(t *testing.T) {
 			svc := mocks.NewGenPass(t)
 			svc.EXPECT().GeneratePassword(passwordLength).Return(tc.password, tc.serviceErr)
 
-			req := httptest.NewRequest(http.MethodGet, "/v1/gen-pass", nil)
+			ctx, logs := newLoggedContext(t)
+			req := httptest.NewRequest(http.MethodGet, "/v1/gen-pass", nil).WithContext(ctx)
 			rec := httptest.NewRecorder()
 			c := echo.New().NewContext(req, rec)
 
@@ -54,6 +57,7 @@ func TestGenPass_GeneratePassword(t *testing.T) {
 				assert.Equal(t, tc.expectedCode, rec.Code)
 				assert.Equal(t, tc.expectedBody, rec.Body.String())
 			}
+			assertErrorLog(t, logs, tc.expectedLog, "rand failure")
 		})
 	}
 }

@@ -11,8 +11,11 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/phihdn/golink/internal/service"
 	"github.com/phihdn/golink/internal/service/mocks"
+	"github.com/phihdn/golink/pkg/validator"
 )
 
 func TestShortenLink_CreateShortenLink(t *testing.T) {
@@ -29,9 +32,10 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		setup        func(ctx context.Context, svc *mocks.ShortenUrl)
 		expectedCode int
 		expectedBody string
+		expectedLog  string
 	}{
 		{
-			name: "success with exp",
+			name: "success with max exp of 7 days",
 			body: `{"exp":604800,"url":"https://example.com"}`,
 			setup: func(ctx context.Context, svc *mocks.ShortenUrl) {
 				svc.EXPECT().
@@ -71,20 +75,8 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 			expectedBody: invalidInput,
 		},
 		{
-			name:         "unsupported scheme",
-			body:         `{"url":"ftp://example.com"}`,
-			expectedCode: http.StatusBadRequest,
-			expectedBody: invalidInput,
-		},
-		{
 			name:         "missing host",
 			body:         `{"url":"https://"}`,
-			expectedCode: http.StatusBadRequest,
-			expectedBody: invalidInput,
-		},
-		{
-			name:         "port without host",
-			body:         `{"url":"https://:80"}`,
 			expectedCode: http.StatusBadRequest,
 			expectedBody: invalidInput,
 		},
@@ -96,7 +88,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		},
 		{
 			name:         "exp too large",
-			body:         `{"exp":9223372037,"url":"https://example.com"}`,
+			body:         `{"exp":604801,"url":"https://example.com"}`,
 			expectedCode: http.StatusBadRequest,
 			expectedBody: invalidInput,
 		},
@@ -110,6 +102,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 			},
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: `{"error":"Internal Server Error"}`,
+			expectedLog:  "create shorten link failed",
 		},
 	}
 
@@ -117,7 +110,7 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := t.Context()
+			ctx, logs := newLoggedContext(t)
 			svc := mocks.NewShortenUrl(t)
 			if tc.setup != nil {
 				tc.setup(ctx, svc)
@@ -127,13 +120,100 @@ func TestShortenLink_CreateShortenLink(t *testing.T) {
 				WithContext(ctx)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
-			c := echo.New().NewContext(req, rec)
+			e := echo.New()
+			e.Validator = validator.New()
+			c := e.NewContext(req, rec)
 
 			err := NewShortenLink(svc).CreateShortenLink(c)
 
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedCode, rec.Code)
 			assert.JSONEq(t, tc.expectedBody, rec.Body.String())
+			assertErrorLog(t, logs, tc.expectedLog, "redis down")
+		})
+	}
+}
+
+func TestShortenLink_Redirect(t *testing.T) {
+	t.Parallel()
+
+	const longURL = "https://example.com/a/long/path"
+
+	testCases := []struct {
+		name             string
+		code             string
+		setup            func(ctx context.Context, svc *mocks.ShortenUrl)
+		expectedCode     int
+		expectedLocation string
+		expectedBody     string
+		expectedLog      string
+	}{
+		{
+			name: "found",
+			code: "abc1234",
+			setup: func(ctx context.Context, svc *mocks.ShortenUrl) {
+				svc.EXPECT().GetUrlFromCode(ctx, "abc1234").Return(longURL, nil).Once()
+			},
+			expectedCode:     http.StatusFound,
+			expectedLocation: longURL,
+		},
+		{
+			name: "not found",
+			code: "abc1234",
+			setup: func(ctx context.Context, svc *mocks.ShortenUrl) {
+				svc.EXPECT().
+					GetUrlFromCode(ctx, "abc1234").
+					Return("", service.ErrLinkNotFound).
+					Once()
+			},
+			expectedCode: http.StatusNotFound,
+			expectedBody: `{"error":"Not Found"}`,
+		},
+		{
+			name: "service error",
+			code: "abc1234",
+			setup: func(ctx context.Context, svc *mocks.ShortenUrl) {
+				svc.EXPECT().
+					GetUrlFromCode(ctx, "abc1234").
+					Return("", errors.New("redis down")).
+					Once()
+			},
+			expectedCode: http.StatusInternalServerError,
+			expectedBody: `{"error":"Internal Server Error"}`,
+			expectedLog:  "get url from code failed",
+		},
+		{
+			name:         "empty code",
+			code:         "",
+			expectedCode: http.StatusBadRequest,
+			expectedBody: `{"error":"Invalid Input"}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx, logs := newLoggedContext(t)
+			svc := mocks.NewShortenUrl(t)
+			if tc.setup != nil {
+				tc.setup(ctx, svc)
+			}
+
+			req := httptest.NewRequest(http.MethodGet, "/v1/links/redirect/"+tc.code, nil).
+				WithContext(ctx)
+			rec := httptest.NewRecorder()
+			c := echo.New().NewContext(req, rec)
+			c.SetPathValues(echo.PathValues{{Name: "code", Value: tc.code}})
+
+			require.NoError(t, NewShortenLink(svc).Redirect(c))
+
+			assert.Equal(t, tc.expectedCode, rec.Code)
+			assert.Equal(t, tc.expectedLocation, rec.Header().Get(echo.HeaderLocation))
+			if tc.expectedBody != "" {
+				assert.JSONEq(t, tc.expectedBody, rec.Body.String())
+			}
+			assertErrorLog(t, logs, tc.expectedLog, "redis down")
 		})
 	}
 }

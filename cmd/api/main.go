@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/phihdn/golink/internal/api"
 	"github.com/phihdn/golink/internal/config"
 	"github.com/phihdn/golink/pkg/redis"
@@ -12,6 +15,10 @@ import (
 //	@BasePath		/
 
 func main() {
+	// Handlers log through zerolog.Ctx(request context). Without a logger in
+	// the context, fall back to the global one, which writes JSON to stderr.
+	zerolog.DefaultContextLogger = &log.Logger
+
 	cfg, err := config.Load()
 	if err != nil {
 		panic(err)

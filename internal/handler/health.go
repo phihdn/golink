@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/rs/zerolog"
 
+	"github.com/phihdn/golink/internal/model"
 	"github.com/phihdn/golink/internal/service"
 )
 
@@ -23,16 +25,17 @@ func NewHealth(svc service.Health) *Health {
 //	@Tags			health
 //	@Produce		json
 //	@Success		200	{object}	model.Health
-//	@Failure		500	{object}	map[string]string
+//	@Failure		500	{object}	model.InternalServerError
 //	@Router			/health-check [get]
 func (h *Health) Check(c *echo.Context) error {
 	// *echo.Context is not a context.Context (unlike *gin.Context), so pass the
 	// request context. It is the one context every layer below must receive.
 	res, err := h.svc.Check(c.Request().Context())
 	if err != nil {
+		zerolog.Ctx(c.Request().Context()).Error().Err(err).Msg("health check failed")
 		return c.JSON(
 			http.StatusInternalServerError,
-			map[string]string{"error": "Internal Server Error"},
+			model.HTTPError{Error: "Internal Server Error"},
 		)
 	}
 
