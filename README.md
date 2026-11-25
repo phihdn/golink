@@ -34,6 +34,7 @@ The Redis variables are read by `pkg/redis`. `redis.NewClient("CACHE")` reads `C
 
 ```bash
 make tools      # install mockery and swag
+make hooks      # format Go code before every commit
 make redis-up   # start Redis in Docker
 make run        # start the API on :8080
 ```
@@ -45,6 +46,8 @@ Run the API and Redis together in Docker with `make docker-up`, and stop them wi
 | Target | Description |
 | --- | --- |
 | `tools` | Install mockery and swag. |
+| `hooks` | Point git at `.githooks`. The pre-commit hook runs `make fmt` and stops the commit when it reformats a staged file. |
+| `fmt` | Format Go code with gofumpt, golines and goimports-reviser, the same tools and order the editor uses. Generated code in `docs/` and `mocks/` is skipped. |
 | `mock` | Regenerate mocks from `.mockery.yml`. |
 | `swag` | Regenerate the Swagger spec in `docs/`. |
 | `test` | Run all tests with coverage. Writes `coverage.out` and `coverage.html` and fails below `COVERAGE_THRESHOLD` (default 80). |
