@@ -1,0 +1,14 @@
+#!/bin/sh
+# Formats Go code before every commit (make fmt). When formatting changes a
+# staged file, the commit stops so the change can be reviewed and staged.
+staged=$(git diff --cached --name-only --diff-filter=ACM -- '*.go')
+[ -z "$staged" ] && exit 0
+
+make fmt >/dev/null || { echo "pre-commit: make fmt failed" >&2; exit 1; }
+
+changed=$(git diff --name-only -- $staged)
+if [ -n "$changed" ]; then
+	echo "pre-commit: make fmt reformatted these files, review and git add them, then commit again:" >&2
+	echo "$changed" | sed 's/^/  /' >&2
+	exit 1
+fi

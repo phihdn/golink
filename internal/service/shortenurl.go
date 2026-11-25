@@ -31,7 +31,11 @@ func NewShortenUrl(r repository.URLStorage, codeGen GenPass) ShortenUrl {
 	return &shortenUrl{r: r, codeGen: codeGen}
 }
 
-func (s *shortenUrl) CreateShortenLink(ctx context.Context, url string, exp time.Duration) (string, error) {
+func (s *shortenUrl) CreateShortenLink(
+	ctx context.Context,
+	url string,
+	exp time.Duration,
+) (string, error) {
 	for range MaxGenerateRetries {
 		// generate code
 		code, err := s.codeGen.GeneratePassword(DefaultCodeLength)

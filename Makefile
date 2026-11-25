@@ -3,12 +3,27 @@ MOCKERY            ?= $(GOBIN)/mockery
 SWAG               ?= $(GOBIN)/swag
 COVERAGE_EXCLUDE   ?= mocks|main.go|test|docs/docs.go
 COVERAGE_THRESHOLD ?= 80
+# Same formatters, order and versions as the editor (conform.nvim): gofumpt, golines, goimports-reviser.
+GOFUMPT            ?= go run mvdan.cc/gofumpt@v0.12.0
+GOLINES            ?= go run github.com/golangci/golines@v0.15.0
+GOIMPORTS_REVISER  ?= go run github.com/incu6us/goimports-reviser/v3@v3.13.2
+# Hand-written Go files. Generated code (swag docs, mockery mocks) is left as its generator wrote it.
+GO_FILES            = $(shell find . -name '*.go' -not -path './docs/*' -not -path '*/mocks/*')
 
-.PHONY: tools mock swag test test-unit test-integration run redis-up redis-down docker-up docker-down
+.PHONY: tools hooks fmt mock swag test test-unit test-integration run redis-up redis-down docker-up docker-down
 
 tools:
 	go install github.com/vektra/mockery/v3@v3.9.0
 	go install github.com/swaggo/swag/cmd/swag@v1.16.6
+
+# Points git at .githooks, so the pre-commit hook formats code before every commit.
+hooks:
+	git config core.hooksPath .githooks
+
+fmt:
+	$(GOFUMPT) -w $(GO_FILES)
+	$(GOLINES) -w $(GO_FILES)
+	@$(GOIMPORTS_REVISER) -format $(GO_FILES) 2>/dev/null
 
 mock:
 	$(MOCKERY)

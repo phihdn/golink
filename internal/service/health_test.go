@@ -20,8 +20,12 @@ func TestHealth_Check(t *testing.T) {
 		expectedErr    error
 	}{
 		{
-			name:           "redis is up",
-			expectedHealth: model.Health{Message: "OK", ServiceName: "golink", InstanceID: "abc-123"},
+			name: "redis is up",
+			expectedHealth: model.Health{
+				Message:     "OK",
+				ServiceName: "golink",
+				InstanceID:  "abc-123",
+			},
 		},
 		{
 			name:        "redis is down",

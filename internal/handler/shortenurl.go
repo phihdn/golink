@@ -36,7 +36,7 @@ type shortenLinkInput struct {
 }
 
 type shortenLinkResponse struct {
-	Code    string `json:"code" example:"aB3dE6g"`
+	Code    string `json:"code"    example:"aB3dE6g"`
 	Message string `json:"message" example:"Shorten URL generated successfully!"`
 }
 
@@ -54,16 +54,26 @@ type shortenLinkResponse struct {
 func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 	// lay input
 	input := &shortenLinkInput{}
-	if err := c.Bind(input); err != nil || !isValidURL(input.URL) || input.Exp < 0 || input.Exp > maxExpSeconds {
+	if err := c.Bind(
+		input,
+	); err != nil || !isValidURL(input.URL) || input.Exp < 0 ||
+		input.Exp > maxExpSeconds {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Input"})
 	}
 
 	// goi svc
 	// *echo.Context is not a context.Context (unlike *gin.Context), so pass the
 	// request context. It is the one context every layer below must receive.
-	code, err := h.svc.CreateShortenLink(c.Request().Context(), input.URL, time.Duration(input.Exp)*time.Second)
+	code, err := h.svc.CreateShortenLink(
+		c.Request().Context(),
+		input.URL,
+		time.Duration(input.Exp)*time.Second,
+	)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
+		return c.JSON(
+			http.StatusInternalServerError,
+			map[string]string{"error": "Internal Server Error"},
+		)
 	}
 
 	// return resp

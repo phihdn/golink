@@ -30,7 +30,10 @@ func (h *Health) Check(c *echo.Context) error {
 	// request context. It is the one context every layer below must receive.
 	res, err := h.svc.Check(c.Request().Context())
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
+		return c.JSON(
+			http.StatusInternalServerError,
+			map[string]string{"error": "Internal Server Error"},
+		)
 	}
 
 	return c.JSON(http.StatusOK, res)
