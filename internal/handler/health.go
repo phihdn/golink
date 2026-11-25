@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 
+	"github.com/phihdn/golink/internal/model"
 	"github.com/phihdn/golink/internal/service"
 )
 
@@ -23,7 +24,7 @@ func NewHealth(svc service.Health) *Health {
 //	@Tags			health
 //	@Produce		json
 //	@Success		200	{object}	model.Health
-//	@Failure		500	{object}	map[string]string
+//	@Failure		500	{object}	model.InternalServerError
 //	@Router			/health-check [get]
 func (h *Health) Check(c *echo.Context) error {
 	// *echo.Context is not a context.Context (unlike *gin.Context), so pass the
@@ -32,7 +33,7 @@ func (h *Health) Check(c *echo.Context) error {
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
-			map[string]string{"error": "Internal Server Error"},
+			model.HTTPError{Error: "Internal Server Error"},
 		)
 	}
 

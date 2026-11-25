@@ -25,6 +25,12 @@ definitions:
         example: Shorten URL generated successfully!
         type: string
     type: object
+  model.BadRequestError:
+    properties:
+      error:
+        example: Invalid Input
+        type: string
+    type: object
   model.ErrorResponse:
     properties:
       message:
@@ -38,6 +44,12 @@ definitions:
       message:
         type: string
       service_name:
+        type: string
+    type: object
+  model.InternalServerError:
+    properties:
+      error:
+        example: Internal Server Error
         type: string
     type: object
 info:
@@ -60,9 +72,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.InternalServerError'
       summary: Health check
       tags:
       - health
@@ -106,15 +116,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.BadRequestError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.InternalServerError'
       summary: Generate shorten url based on original url
       tags:
       - link

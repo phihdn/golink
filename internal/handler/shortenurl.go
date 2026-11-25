@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 
+	"github.com/phihdn/golink/internal/model"
 	"github.com/phihdn/golink/internal/service"
 )
 
@@ -43,17 +44,17 @@ type shortenLinkResponse struct {
 // @Produce      application/json
 // @Param        input body shortenLinkInput true "Input required"
 // @Success      200 {object} shortenLinkResponse
-// @Failure      400 {object} map[string]string
-// @Failure      500 {object} map[string]string
+// @Failure      400 {object} model.BadRequestError
+// @Failure      500 {object} model.InternalServerError
 // @Router       /v1/links/shorten [post]
 func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 	// lay input
 	input := &shortenLinkInput{}
 	if err := c.Bind(input); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Input"})
+		return c.JSON(http.StatusBadRequest, model.HTTPError{Error: "Invalid Input"})
 	}
 	if err := c.Validate(input); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Input"})
+		return c.JSON(http.StatusBadRequest, model.HTTPError{Error: "Invalid Input"})
 	}
 
 	// goi svc
@@ -67,7 +68,7 @@ func (h *shortenLink) CreateShortenLink(c *echo.Context) error {
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
-			map[string]string{"error": "Internal Server Error"},
+			model.HTTPError{Error: "Internal Server Error"},
 		)
 	}
 
