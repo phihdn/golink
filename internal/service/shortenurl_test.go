@@ -48,7 +48,10 @@ func TestShortenUrl_CreateShortenLink(t *testing.T) {
 			setup: func(ctx context.Context, gen *mocks.GenPass, storage *repomocks.URLStorage) {
 				gen.EXPECT().GeneratePassword(DefaultCodeLength).Return("taken00", nil).Once()
 				gen.EXPECT().GeneratePassword(DefaultCodeLength).Return("free000", nil).Once()
-				storage.EXPECT().StoreURL(ctx, "taken00", url, time.Duration(0)).Return(repository.ErrKeyExisted).Once()
+				storage.EXPECT().
+					StoreURL(ctx, "taken00", url, time.Duration(0)).
+					Return(repository.ErrKeyExisted).
+					Once()
 				storage.EXPECT().StoreURL(ctx, "free000", url, time.Duration(0)).Return(nil).Once()
 			},
 			expectedCode: "free000",
@@ -58,7 +61,10 @@ func TestShortenUrl_CreateShortenLink(t *testing.T) {
 			setup: func(ctx context.Context, gen *mocks.GenPass, storage *repomocks.URLStorage) {
 				gen.EXPECT().GeneratePassword(DefaultCodeLength).Return("taken00", nil).Once()
 				gen.EXPECT().GeneratePassword(DefaultCodeLength).Return("free000", nil).Once()
-				storage.EXPECT().StoreURL(ctx, "taken00", url, time.Duration(0)).Return(fmt.Errorf("store: %w", repository.ErrKeyExisted)).Once()
+				storage.EXPECT().
+					StoreURL(ctx, "taken00", url, time.Duration(0)).
+					Return(fmt.Errorf("store: %w", repository.ErrKeyExisted)).
+					Once()
 				storage.EXPECT().StoreURL(ctx, "free000", url, time.Duration(0)).Return(nil).Once()
 			},
 			expectedCode: "free000",
@@ -66,15 +72,24 @@ func TestShortenUrl_CreateShortenLink(t *testing.T) {
 		{
 			name: "gives up after max retries",
 			setup: func(ctx context.Context, gen *mocks.GenPass, storage *repomocks.URLStorage) {
-				gen.EXPECT().GeneratePassword(DefaultCodeLength).Return("taken00", nil).Times(MaxGenerateRetries)
-				storage.EXPECT().StoreURL(ctx, "taken00", url, time.Duration(0)).Return(repository.ErrKeyExisted).Times(MaxGenerateRetries)
+				gen.EXPECT().
+					GeneratePassword(DefaultCodeLength).
+					Return("taken00", nil).
+					Times(MaxGenerateRetries)
+				storage.EXPECT().
+					StoreURL(ctx, "taken00", url, time.Duration(0)).
+					Return(repository.ErrKeyExisted).
+					Times(MaxGenerateRetries)
 			},
 			expectedErr: ErrCodeExhausted,
 		},
 		{
 			name: "code generator error",
 			setup: func(_ context.Context, gen *mocks.GenPass, _ *repomocks.URLStorage) {
-				gen.EXPECT().GeneratePassword(DefaultCodeLength).Return("", errors.New("rand failure")).Once()
+				gen.EXPECT().
+					GeneratePassword(DefaultCodeLength).
+					Return("", errors.New("rand failure")).
+					Once()
 			},
 			expectedErr: errors.New("rand failure"),
 		},
@@ -82,7 +97,10 @@ func TestShortenUrl_CreateShortenLink(t *testing.T) {
 			name: "storage error",
 			setup: func(ctx context.Context, gen *mocks.GenPass, storage *repomocks.URLStorage) {
 				gen.EXPECT().GeneratePassword(DefaultCodeLength).Return("abc1234", nil).Once()
-				storage.EXPECT().StoreURL(ctx, "abc1234", url, time.Duration(0)).Return(errors.New("redis down")).Once()
+				storage.EXPECT().
+					StoreURL(ctx, "abc1234", url, time.Duration(0)).
+					Return(errors.New("redis down")).
+					Once()
 			},
 			expectedErr: errors.New("redis down"),
 		},

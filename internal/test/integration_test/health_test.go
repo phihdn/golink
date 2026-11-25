@@ -23,7 +23,11 @@ func TestHealthCheck(t *testing.T) {
 	rec := healthCheck(srv)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.JSONEq(t, `{"message":"OK","service_name":"golink","instance_id":"abc-123"}`, rec.Body.String())
+	assert.JSONEq(
+		t,
+		`{"message":"OK","service_name":"golink","instance_id":"abc-123"}`,
+		rec.Body.String(),
+	)
 }
 
 func TestHealthCheck_RedisDown(t *testing.T) {
